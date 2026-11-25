@@ -1,0 +1,28 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: devops-lab6-config
+  namespace: devops-lab6
+  labels:
+    app.kubernetes.io/name: devops-lab6
+    app.kubernetes.io/component: configuration
+data:
+  # Individual key-value configuration pairs (injected via env / envFrom)
+  APP_ENV: "production"
+  LOG_LEVEL: "INFO"
+  FEATURE_FLAG_ANALYTICS: "enabled"
+  MAX_BATCH_SIZE: "500"
+  CLUSTER_ROLE: "worker-dashboard"
+  APP_VERSION: "v1.0.0"
+
+  # File configuration (mounted as volume inside /etc/config/)
+  app_settings.json: |
+    {
+      "app_name": "DevOps Lab 6 Microservice",
+      "cluster_environment": "production-on-prem-kind",
+      "cache_ttl_seconds": 3600,
+      "max_connections": 100,
+      "maintenance_window": "Sunday 02:00-04:00 UTC",
+      "notification_channel": "#devops-alerts",
+      "rate_limit_per_minute": 1000
+    }

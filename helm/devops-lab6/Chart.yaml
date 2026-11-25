@@ -1,0 +1,17 @@
+apiVersion: v2
+name: devops-lab6
+description: Production-grade Helm Chart for DevOps Lab 6 - Deploying Jobs, CronJobs, ConfigMaps, Secrets, and Microservices
+type: application
+version: 0.1.0
+appVersion: "1.0.0"
+keywords:
+  - kubernetes
+  - devops
+  - jobs
+  - cronjobs
+  - configmaps
+  - secrets
+  - helm
+maintainers:
+  - name: DevOps Engineering Laboratory
+    email: devops.lab@christuniversity.in

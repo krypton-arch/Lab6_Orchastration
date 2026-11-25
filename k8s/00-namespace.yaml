@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: devops-lab6
+  labels:
+    name: devops-lab6
+    environment: laboratory
+    course: devops-engineering
+    managed-by: declarative-manifests

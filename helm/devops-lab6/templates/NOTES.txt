@@ -1,0 +1,28 @@
+========================================================================
+DevOps Laboratory 6: Kubernetes Helm Release Deployment Completed
+========================================================================
+
+Release Name: {{ .Release.Name }}
+Namespace:    {{ .Release.Namespace }}
+Chart:        {{ .Chart.Name }}-{{ .Chart.Version }}
+App Version:  {{ .Chart.AppVersion }}
+
+1. Get the application URL:
+{{- if eq .Values.service.type "NodePort" }}
+  export NODE_PORT=$(kubectl get --namespace {{ .Release.Namespace }} -o jsonpath="{.spec.ports[0].nodePort}" services {{ include "devops-lab6.fullname" . }}-service)
+  export NODE_IP=$(kubectl get nodes --namespace {{ .Release.Namespace }} -o jsonpath="{.items[0].status.addresses[0].address}")
+  echo "Application Dashboard accessible at: http://$NODE_IP:$NODE_PORT"
+  echo "Local NodePort access: http://localhost:{{ .Values.service.nodePort }}"
+{{- else if eq .Values.service.type "ClusterIP" }}
+  kubectl --namespace {{ .Release.Namespace }} port-forward service/{{ include "devops-lab6.fullname" . }}-service 5000:80
+  echo "Application Dashboard accessible at: http://localhost:5000"
+{{- end }}
+
+2. Inspect Injected Configurations & Secrets:
+  kubectl get configmaps -n {{ .Release.Namespace }} {{ include "devops-lab6.fullname" . }}-config -o yaml
+  kubectl get secrets -n {{ .Release.Namespace }} {{ include "devops-lab6.fullname" . }}-secret -o yaml
+
+3. Check Batch Job and CronJob Status:
+  kubectl get jobs,cronjobs -n {{ .Release.Namespace }}
+
+========================================================================

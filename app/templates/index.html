@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DevOps Lab 6: Jobs, CronJobs, ConfigMaps, Secrets & Helm</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #090d16;
+            --bg-card: rgba(17, 24, 39, 0.75);
+            --bg-card-hover: rgba(30, 41, 59, 0.85);
+            --border-color: rgba(51, 65, 85, 0.6);
+            --border-highlight: rgba(99, 102, 241, 0.4);
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent-indigo: #6366f1;
+            --accent-cyan: #06b6d4;
+            --accent-emerald: #10b981;
+            --accent-amber: #f59e0b;
+            --accent-purple: #a855f7;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text-main);
+            min-height: 100vh;
+            padding: 32px 24px;
+            background-image: 
+                radial-gradient(circle at 15% 20%, rgba(99, 102, 241, 0.12) 0%, transparent 40%),
+                radial-gradient(circle at 85% 80%, rgba(6, 182, 212, 0.12) 0%, transparent 40%);
+        }
+
+        .container {
+            max-width: 1240px;
+            margin: 0 auto;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 24px;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 32px;
+        }
+
+        .badge-academic {
+            font-size: 11px;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            font-weight: 700;
+            color: var(--accent-cyan);
+            background: rgba(6, 182, 212, 0.12);
+            border: 1px solid rgba(6, 182, 212, 0.3);
+            padding: 4px 10px;
+            border-radius: 9999px;
+            display: inline-block;
+            margin-bottom: 8px;
+        }
+
+        h1 {
+            font-size: 26px;
+            font-weight: 800;
+            background: linear-gradient(135deg, #ffffff 0%, #cbd5e1 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .header-meta {
+            text-align: right;
+            font-size: 13px;
+            color: var(--text-muted);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .status-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 12px;
+            border-radius: 9999px;
+            background: rgba(16, 185, 129, 0.15);
+            color: #34d399;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            font-size: 12px;
+            font-weight: 600;
+            margin-top: 6px;
+        }
+
+        .dot-pulse {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: #10b981;
+            box-shadow: 0 0 10px #10b981;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(0.95); opacity: 0.8; }
+            50% { transform: scale(1.2); opacity: 1; }
+            100% { transform: scale(0.95); opacity: 0.8; }
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+
+        .card {
+            background: var(--bg-card);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 24px;
+            transition: transform 0.2s ease, border-color 0.2s ease;
+        }
+
+        .card:hover {
+            border-color: var(--border-highlight);
+            transform: translateY(-2px);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 18px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid rgba(51, 65, 85, 0.4);
+        }
+
+        .card-title {
+            font-size: 16px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .tag {
+            font-size: 11px;
+            font-family: 'JetBrains Mono', monospace;
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-weight: 600;
+        }
+        .tag-indigo { background: rgba(99, 102, 241, 0.2); color: #818cf8; }
+        .tag-amber { background: rgba(245, 158, 11, 0.2); color: #fbbf24; }
+        .tag-emerald { background: rgba(16, 185, 129, 0.2); color: #34d399; }
+        .tag-purple { background: rgba(168, 85, 247, 0.2); color: #c084fc; }
+
+        .param-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .param-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 13px;
+        }
+
+        .param-label {
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .param-val {
+            font-family: 'JetBrains Mono', monospace;
+            color: #f1f5f9;
+            background: rgba(15, 23, 42, 0.6);
+            padding: 3px 8px;
+            border-radius: 6px;
+            border: 1px solid rgba(51, 65, 85, 0.4);
+            font-size: 12px;
+        }
+
+        .code-box {
+            background: #0f172a;
+            border: 1px solid #1e293b;
+            border-radius: 8px;
+            padding: 12px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            color: #cbd5e1;
+            line-height: 1.5;
+            overflow-x: auto;
+            margin-top: 10px;
+        }
+
+        .footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: var(--text-muted);
+            font-size: 12px;
+        }
+
+        .link-row {
+            display: flex;
+            gap: 16px;
+        }
+
+        .link-btn {
+            color: var(--accent-cyan);
+            text-decoration: none;
+            font-weight: 600;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .link-btn:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div>
+                <span class="badge-academic">CHRIST (Deemed to be University) &bull; Department of CSE</span>
+                <h1>Kubernetes Workloads, Configuration & Helm Packaging</h1>
+                <p style="color: var(--text-muted); font-size: 14px; margin-top: 4px;">
+                    Lab 6: Jobs, CronJobs, ConfigMaps, Secrets, and Helm Deployment Automation
+                </p>
+            </div>
+            <div class="header-meta">
+                <div>Cluster: <strong>Kubernetes v1.36.1</strong></div>
+                <div>Release: <span class="tag tag-indigo">{{ app_version }}</span></div>
+                <div class="status-pill">
+                    <span class="dot-pulse"></span> Service Healthy
+                </div>
+            </div>
+        </header>
+
+        <!-- Row 1: Infrastructure & Downward API -->
+        <div class="grid">
+            <!-- Card 1: Pod & Node Topology -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <span>&#9881;</span> Cluster Pod Topology
+                    </div>
+                    <span class="tag tag-indigo">Downward API</span>
+                </div>
+                <div class="param-list">
+                    <div class="param-row">
+                        <span class="param-label">Pod Identifier:</span>
+                        <span class="param-val">{{ pod_name }}</span>
+                    </div>
+                    <div class="param-row">
+                        <span class="param-label">Target Namespace:</span>
+                        <span class="param-val">{{ pod_namespace }}</span>
+                    </div>
+                    <div class="param-row">
+                        <span class="param-label">Host Worker Node:</span>
+                        <span class="param-val">{{ node_name }}</span>
+                    </div>
+                    <div class="param-row">
+                        <span class="param-label">Pod Internal IP:</span>
+                        <span class="param-val">{{ pod_ip }}</span>
+                    </div>
+                    <div class="param-row">
+                        <span class="param-label">Active Cluster Role:</span>
+                        <span class="param-val">{{ cluster_role }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card 2: ConfigMap Parameters -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <span>&#128196;</span> ConfigMap Management
+                    </div>
+                    <span class="tag tag-cyan" style="background: rgba(6, 182, 212, 0.2); color: #22d3ee;">v1/ConfigMap</span>
+                </div>
+                <div class="param-list">
+                    <div class="param-row">
+                        <span class="param-label">Environment Mode:</span>
+                        <span class="param-val" style="color: #38bdf8;">{{ app_env }}</span>
+                    </div>
+                    <div class="param-row">
+                        <span class="param-label">Logging Level:</span>
+                        <span class="param-val">{{ log_level }}</span>
+                    </div>
+                    <div class="param-row">
+                        <span class="param-label">Analytics Feature Flag:</span>
+                        <span class="param-val">{{ feature_flag_analytics }}</span>
+                    </div>
+                    <div class="param-row">
+                        <span class="param-label">Batch Size Threshold:</span>
+                        <span class="param-val">{{ max_batch_size }} records</span>
+                    </div>
+                </div>
+                <div style="margin-top: 14px;">
+                    <span style="font-size: 11px; color: var(--text-muted); font-weight: 600;">Mounted Volume Config (`/etc/config`):</span>
+                    <div class="code-box">{{ mounted_cfg | tojson(indent=2) }}</div>
+                </div>
+            </div>
+
+            <!-- Card 3: Kubernetes Secrets -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <span>&#128274;</span> Kubernetes Secrets
+                    </div>
+                    <span class="tag tag-amber">v1/Secret (Opaque)</span>
+                </div>
+                <div class="param-list">
+                    <div class="param-row">
+                        <span class="param-label">Database Username:</span>
+                        <span class="param-val">{{ db_user }}</span>
+                    </div>
+                    <div class="param-row">
+                        <span class="param-label">Database Password:</span>
+                        <span class="param-val" style="color: #fbbf24;">{{ masked_pw }} [SHA256: {{ pw_hash }}]</span>
+                    </div>
+                    <div class="param-row">
+                        <span class="param-label">API Bearer Token:</span>
+                        <span class="param-val" style="color: #fbbf24;">{{ masked_token }} [SHA256: {{ token_hash }}]</span>
+                    </div>
+                    <div class="param-row">
+                        <span class="param-label">Secret Ingestion Vector:</span>
+                        <span class="param-val">secretKeyRef + volumeMount</span>
+                    </div>
+                </div>
+                <div style="margin-top: 14px;">
+                    <span style="font-size: 11px; color: var(--text-muted); font-weight: 600;">Secure Vault Mount (`/etc/secrets`):</span>
+                    <div class="code-box">Permissions: {{ mounted_sec.permissions }} | Verified Length: {{ mounted_sec.length }}B | Fingerprint: {{ mounted_sec.fingerprint }}</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Row 2: Workloads & Helm Packaging -->
+        <div class="grid">
+            <!-- Card 4: Batch Jobs -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <span>&#9874;</span> Batch Jobs (Run-to-Completion)
+                    </div>
+                    <span class="tag tag-emerald">batch/v1 Job</span>
+                </div>
+                <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 14px;">
+                    Executes idempotent batch calculations, ETL pipelines, and database migrations with fault-tolerant completions.
+                </p>
+                <div class="param-list">
+                    <div class="param-row">
+                        <span class="param-label">Completions Target:</span>
+                        <span class="param-val">3 Successful Pods</span>
+                    </div>
+                    <div class="param-row">
+                        <span class="param-label">Parallelism (Concurrency):</span>
+                        <span class="param-val">2 Concurrent Workers</span>
+                    </div>
+                    <div class="param-row">
+                        <span class="param-label">Backoff Retry Limit:</span>
+                        <span class="param-val">4 Exponential Retries</span>
+                    </div>
+                    <div class="param-row">
+                        <span class="param-label">Restart Policy:</span>
+                        <span class="param-val">OnFailure</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card 5: CronJobs -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <span>&#9201;</span> CronJobs (Scheduled Workloads)
+                    </div>
+                    <span class="tag tag-purple">batch/v1 CronJob</span>
+                </div>
+                <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 14px;">
+                    Triggers automated system maintenance, cache eviction, and audit heartbeats on a POSIX cron schedule.
+                </p>
+                <div class="param-list">
+                    <div class="param-row">
+                        <span class="param-label">POSIX Schedule Expression:</span>
+                        <span class="param-val" style="color: #c084fc;">*/2 * * * * (Every 2 Mins)</span>
+                    </div>
+                    <div class="param-row">
+                        <span class="param-label">Concurrency Policy:</span>
+                        <span class="param-val">Forbid (Prevents Overlap)</span>
+                    </div>
+                    <div class="param-row">
+                        <span class="param-label">Success History Limit:</span>
+                        <span class="param-val">3 Historical Records</span>
+                    </div>
+                    <div class="param-row">
+                        <span class="param-label">Failed History Limit:</span>
+                        <span class="param-val">1 Record Retained</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card 6: Helm Packaging Architecture -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <span>&#128230;</span> Helm 3 Package Architecture
+                    </div>
+                    <span class="tag tag-indigo">helm/devops-lab6</span>
+                </div>
+                <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 14px;">
+                    Single parameterized chart packaging all deployments, services, configs, secrets, jobs, and cronjobs.
+                </p>
+                <div class="param-list">
+                    <div class="param-row">
+                        <span class="param-label">Chart Name & Version:</span>
+                        <span class="param-val">devops-lab6-chart:0.1.0</span>
+                    </div>
+                    <div class="param-row">
+                        <span class="param-label">Template Engine:</span>
+                        <span class="param-val">Go Templates + Sprig Functions</span>
+                    </div>
+                    <div class="param-row">
+                        <span class="param-label">Release Storage:</span>
+                        <span class="param-val">Kubernetes Secrets (v1)</span>
+                    </div>
+                    <div class="param-row">
+                        <span class="param-label">Lifecycle Operations:</span>
+                        <span class="param-val">lint, template, install, upgrade, rollback</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <div class="link-row">
+                <a href="/api/config" target="_blank" class="link-btn">&rarr; /api/config</a>
+                <a href="/api/secret-status" target="_blank" class="link-btn">&rarr; /api/secret-status</a>
+                <a href="/api/jobs" target="_blank" class="link-btn">&rarr; /api/jobs</a>
+                <a href="/healthz" target="_blank" class="link-btn">&rarr; /healthz</a>
+                <a href="/ready" target="_blank" class="link-btn">&rarr; /ready</a>
+            </div>
+            <div>
+                System Time: <span style="font-family: 'JetBrains Mono', monospace;">{{ now_utc }}</span>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

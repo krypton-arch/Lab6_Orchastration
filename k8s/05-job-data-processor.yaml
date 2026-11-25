@@ -1,0 +1,72 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: data-batch-processor-job
+  namespace: devops-lab6
+  labels:
+    app.kubernetes.io/name: data-batch-processor
+    app.kubernetes.io/component: batch-worker
+spec:
+  # Target 3 successful pod executions to mark the Job complete
+  completions: 3
+  # Allow up to 2 pods to execute concurrently in parallel
+  parallelism: 2
+  # Number of retries before treating Job as failed
+  backoffLimit: 4
+  # Maximum wall-clock execution duration in seconds
+  activeDeadlineSeconds: 300
+  # Automatically clean up completed job after 600 seconds
+  ttlSecondsAfterFinished: 600
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: data-batch-processor
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: batch-processor
+          image: lab6-microservice:v1.0.0
+          imagePullPolicy: IfNotPresent
+          command: ["python", "app.py", "--mode=job"]
+          env:
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: devops-lab6-secret
+                  key: DB_USER
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: devops-lab6-secret
+                  key: DB_PASSWORD
+            - name: API_AUTH_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: devops-lab6-secret
+                  key: API_AUTH_TOKEN
+          envFrom:
+            - configMapRef:
+                name: devops-lab6-config
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "64Mi"
+            limits:
+              cpu: "200m"
+              memory: "128Mi"

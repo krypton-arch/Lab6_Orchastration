@@ -1,0 +1,70 @@
+# Default values for devops-lab6 Helm chart.
+# This is a YAML-formatted file.
+
+replicaCount: 2
+
+image:
+  repository: lab6-microservice
+  pullPolicy: IfNotPresent
+  tag: "v1.0.0"
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+service:
+  type: NodePort
+  port: 80
+  targetPort: 5000
+  nodePort: 30086
+
+# ConfigMap Configuration
+config:
+  env: "production"
+  logLevel: "INFO"
+  featureAnalytics: "enabled"
+  maxBatchSize: 500
+  clusterRole: "worker-dashboard"
+  appSettings:
+    app_name: "DevOps Lab 6 Microservice (Helm Managed)"
+    cluster_environment: "helm-managed-production"
+    cache_ttl_seconds: 3600
+    max_connections: 100
+    maintenance_window: "Sunday 02:00-04:00 UTC"
+    notification_channel: "#devops-alerts"
+    rate_limit_per_minute: 1000
+
+# Secret Credentials
+secret:
+  dbUser: "devops_admin"
+  dbPassword: "SuperSecureClusterP@ssw0rd!2026"
+  apiAuthToken: "sk-live-k8s-vault-token-9948271a-lab6"
+  vaultKey: "vault:v1:894723894723984723894723894723-primary-key"
+
+# Batch Job Configuration
+job:
+  enabled: true
+  name: "data-batch-processor"
+  completions: 3
+  parallelism: 2
+  backoffLimit: 4
+  activeDeadlineSeconds: 300
+  ttlSecondsAfterFinished: 600
+
+# Scheduled CronJob Configuration
+cronjob:
+  enabled: true
+  name: "system-periodic-cleaner"
+  schedule: "*/2 * * * *"
+  concurrencyPolicy: "Forbid"
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 1
+  startingDeadlineSeconds: 60
+
+resources:
+  limits:
+    cpu: 250m
+    memory: 128Mi
+  requests:
+    cpu: 50m
+    memory: 64Mi

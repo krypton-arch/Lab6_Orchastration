@@ -1,0 +1,18 @@
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+
+# Helm package archives (keep chart source)
+helm/*.tgz
+
+# Temporary files
+*.tmp
+*.log
+.DS_Store
+Thumbs.db

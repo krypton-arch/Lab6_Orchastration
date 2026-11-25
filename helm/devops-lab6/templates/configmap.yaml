@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "devops-lab6.fullname" . }}-config
+  labels:
+    {{- include "devops-lab6.labels" . | nindent 4 }}
+data:
+  APP_ENV: {{ .Values.config.env | quote }}
+  LOG_LEVEL: {{ .Values.config.logLevel | quote }}
+  FEATURE_FLAG_ANALYTICS: {{ .Values.config.featureAnalytics | quote }}
+  MAX_BATCH_SIZE: {{ .Values.config.maxBatchSize | quote }}
+  CLUSTER_ROLE: {{ .Values.config.clusterRole | quote }}
+  APP_VERSION: {{ .Values.image.tag | quote }}
+  app_settings.json: |
+    {{- .Values.config.appSettings | toPrettyJson | nindent 4 }}
