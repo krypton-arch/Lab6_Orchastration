@@ -12,6 +12,7 @@ venv/
 helm/*.tgz
 
 # Temporary files
+~$*
 *.tmp
 *.log
 .DS_Store
